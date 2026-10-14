@@ -32,7 +32,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Prepare Android Project & Native Code
+      - name: Prepare Android Project & Dependencies
         run: |
           mkdir -p custom_backup
           cp -r android/app/src/main/kotlin/com/jarvis/assistant custom_backup/
@@ -46,63 +46,15 @@ jobs:
           cp -r custom_backup/assistant/* android/app/src/main/kotlin/com/jarvis/assistant/
           cp custom_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           
-          # Explicit SDK numbers in app/build.gradle
           sed -i 's/compileSdk = .*/compileSdk = 34/' android/app/build.gradle || true
           sed -i 's/minSdk = .*/minSdk = 26/' android/app/build.gradle || true
           sed -i 's/targetSdk = .*/targetSdk = 34/' android/app/build.gradle || true
           sed -i 's/namespace = .*/namespace = "com.jarvis.assistant"/' android/app/build.gradle || true
           sed -i 's/applicationId = .*/applicationId = "com.jarvis.assistant"/' android/app/build.gradle || true
-          
-          # Force local.properties versions
-          echo "flutter.compileSdkVersion=34" >> android/local.properties
-          echo "flutter.minSdkVersion=26" >> android/local.properties
-          echo "flutter.targetSdkVersion=34" >> android/local.properties
 
-          # AndroidX configuration
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx4G" >> android/gradle.properties
-          
           flutter pub get
-
-          # Patch speech_to_text plugin build.gradle directly to eradicate dynamic substring bug
-          SPEECH_GRADLE=$(find /home/runner/.pub-cache -name "build.gradle" -path "*/speech_to_text*/*" | head -n 1)
-          if [ -n "$SPEECH_GRADLE" ]; then
-            echo "Patching $SPEECH_GRADLE..."
-            cat << 'EOF' > "$SPEECH_GRADLE"
-group 'com.csdcorp.speech_to_text'
-version '1.0-SNAPSHOT'
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.0'
-    }
-}
-
-apply plugin: 'com.android.library'
-
-android {
-    namespace "com.csdcorp.speech_to_text"
-    compileSdkVersion 34
-
-    defaultConfig {
-        minSdkVersion 21
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-
-dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-}
-EOF
-          fi
+          chmod +x scripts/patch_gradle.sh
+          bash scripts/patch_gradle.sh
 
       - name: Build Android Release APK
         run: flutter build apk --release --no-tree-shake-icons
