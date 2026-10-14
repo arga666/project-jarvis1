@@ -43,28 +43,39 @@ for file in $(find /home/runner/.pub-cache -wholename "*/speech_to_text*/android
 group 'com.csdcorp.speech_to_text'
 version '1.0-SNAPSHOT'
 
-buildscript {
+rootProject.allprojects {
     repositories {
         google()
         mavenCentral()
     }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.0'
-    }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.csdcorp.speech_to_text"
-    compileSdkVersion 34
+    namespace 'com.csdcorp.speech_to_text'
+    compileSdk 34
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
 
     defaultConfig {
         minSdkVersion 21
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+    lintOptions {
+        disable 'InvalidPackage'
     }
 }
 
