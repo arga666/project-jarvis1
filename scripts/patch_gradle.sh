@@ -13,12 +13,10 @@ echo "android.useAndroidX=true" >> android/gradle.properties
 echo "android.enableJetifier=true" >> android/gradle.properties
 echo "org.gradle.jvmargs=-Xmx4G" >> android/gradle.properties
 
-# 3. Patch speech_to_text build.gradle if found in pub-cache
-SPEECH_GRADLE=$(find /home/runner/.pub-cache -name "build.gradle" -path "*/speech_to_text*/*" 2>/dev/null | head -n 1)
-
-if [ -n "$SPEECH_GRADLE" ]; then
-  echo "Found speech_to_text gradle at: $SPEECH_GRADLE"
-  cat > "$SPEECH_GRADLE" << 'EOF'
+# 3. Patch ALL speech_to_text build.gradle files in pub-cache
+for file in $(find /home/runner/.pub-cache -wholename "*/speech_to_text*/android/build.gradle"); do
+  echo "Found and patching speech_to_text gradle at: $file"
+  cat > "$file" << 'EOF'
 group 'com.csdcorp.speech_to_text'
 version '1.0-SNAPSHOT'
 
@@ -51,7 +49,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
 }
 EOF
-  echo "Successfully patched speech_to_text build.gradle!"
-fi
+  echo "Successfully patched: $file"
+done
 
 echo "=== Gradle Patch Completed ==="
