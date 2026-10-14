@@ -32,44 +32,62 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Prepare Android Project & Native Code
+        run: |
+          mkdir -p custom_backup
+          cp -r android/app/src/main/kotlin custom_backup/
+          cp android/app/src/main/AndroidManifest.xml custom_backup/
+          rm -rf android
+          flutter create --platforms=android --org com.jarvis .
+          mkdir -p android/app/src/main/kotlin/com/jarvis/assistant
+          cp -r custom_backup/kotlin/com/jarvis/assistant/* android/app/src/main/kotlin/com/jarvis/assistant/
+          cp custom_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          echo "compileSdkVersion=34" >> android/gradle.properties
+          flutter pub get
 
       - name: Build Android Release APK
         run: flutter build apk --release --no-tree-shake-icons
 
+      - name: Prepare Release File
+        run: |
+          mkdir -p release-output
+          cp build/app/outputs/flutter-apk/app-release.apk release-output/Jarvis-Assistant.apk
+
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: jarvis-assistant-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
+          name: Jarvis-Assistant-APK
+          path: release-output/Jarvis-Assistant.apk
 
-      - name: Create GitHub Release with APK
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
           tag_name: v1.0.0
           name: "Jarvis Virtual Assistant v1.0.0 (Release APK)"
           body: |
             ### 🚀 Jarvis (Vis) - Autonomous Android Assistant APK
             
-            Silakan download file **`Jarvis-Assistant-v1.0.0.apk`** di bawah ini dan instal langsung di HP Android kamu!
+            Silakan download file **`Jarvis-Assistant.apk`** di bawah ini dan instal langsung di HP Android kamu!
+            
+            #### 📥 Download Langsung:
+            - **[Download Jarvis-Assistant.apk](https://github.com/${{ github.repository }}/releases/download/v1.0.0/Jarvis-Assistant.apk)**
             
             #### 🌟 Fitur Utama:
-            - **Persona & Gaya Bicara:** Santai, cowok muda, lu-gua, berani mendebat/membantah argumen salah.
+            - **Persona & Gaya Bicara:** Santai, cowok muda, lu-gua, berani membantah & mendebat argumen salah.
             - **Respon Super Cepat:** Low latency ~2-3 detik via Gemini Engine.
             - **Floating Overlay:** Orb bulat gradasi dark blue melayang di atas semua aplikasi.
             - **Wake-Word & Background Service:** Otomatis respons saat dipanggil "Jarvis" atau "Vis".
-            - **Alarm Suara Otomatis:** Deteksi waktu alami langsung terintegrasi dengan Jam Sistem Android.
+            - **Alarm Suara Otomatis:** Perintah suara langsung masuk ke jam alarm sistem Android.
             - **Sleep Cycle & Anti-Begadang:** Pengingat otomatis saat lewat jam tidur dengan gaya sahabat peduli.
-            - **Gaming Mode (RAM Saver):** *"Vis tidur dulu gua mau main game"* -> Bekukan animasi & bersihkan cache RAM.
+            - **Gaming Mode (RAM Saver):** *"Vis tidur dulu gua mau main game"* -> Membekukan visual & membebaskan RAM.
             
             #### ⚠️ Catatan Instalasi di HP:
-            1. Izinkan **Install Unknown Apps** di browser/file manager kamu.
-            2. Berikan izin **Display over other apps** (System Overlay).
-            3. Berikan izin **Microphone** & matikan **Battery Optimization** agar Jarvis bisa standby di background.
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
+            1. Buka file APK di HP, jika muncul konfirmasi keamanan pilih **"Tetap Install" / "Izinkan dari sumber ini"**.
+            2. Buka aplikasi Jarvis, masuk menu Pengaturan dan masukkan **Gemini API Key**.
+            3. Berikan izin **Display over other apps** (System Overlay).
+            4. Matikan **Battery Optimization** agar Jarvis bisa standby terus di background.
+          files: release-output/Jarvis-Assistant.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
