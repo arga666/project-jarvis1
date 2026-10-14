@@ -1,0 +1,75 @@
+name: Build & Release Jarvis Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Android Release APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-assistant-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
+        with:
+          tag_name: v1.0.0
+          name: "Jarvis Virtual Assistant v1.0.0 (Release APK)"
+          body: |
+            ### 🚀 Jarvis (Vis) - Autonomous Android Assistant APK
+            
+            Silakan download file **`Jarvis-Assistant-v1.0.0.apk`** di bawah ini dan instal langsung di HP Android kamu!
+            
+            #### 🌟 Fitur Utama:
+            - **Persona & Gaya Bicara:** Santai, cowok muda, lu-gua, berani mendebat/membantah argumen salah.
+            - **Respon Super Cepat:** Low latency ~2-3 detik via Gemini Engine.
+            - **Floating Overlay:** Orb bulat gradasi dark blue melayang di atas semua aplikasi.
+            - **Wake-Word & Background Service:** Otomatis respons saat dipanggil "Jarvis" atau "Vis".
+            - **Alarm Suara Otomatis:** Deteksi waktu alami langsung terintegrasi dengan Jam Sistem Android.
+            - **Sleep Cycle & Anti-Begadang:** Pengingat otomatis saat lewat jam tidur dengan gaya sahabat peduli.
+            - **Gaming Mode (RAM Saver):** *"Vis tidur dulu gua mau main game"* -> Bekukan animasi & bersihkan cache RAM.
+            
+            #### ⚠️ Catatan Instalasi di HP:
+            1. Izinkan **Install Unknown Apps** di browser/file manager kamu.
+            2. Berikan izin **Display over other apps** (System Overlay).
+            3. Berikan izin **Microphone** & matikan **Battery Optimization** agar Jarvis bisa standby di background.
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
