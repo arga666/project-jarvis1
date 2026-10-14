@@ -119,7 +119,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       decoration: BoxDecoration(
         color: msg.isUser ? AppTheme.cardDark : AppTheme.cardGlass,
         borderRadius: BorderRadius.circular(14),
-        border: Border.Border.all(
+        border: Border.all(
           color: msg.isUser
               ? Colors.white.withOpacity(0.1)
               : msg.isSleepWarning

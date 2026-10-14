@@ -119,8 +119,9 @@ class _MainControlTab extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-        children: [
-          // Visual Animated Orb Showcase
+        child: Column(
+          children: [
+            // Visual Animated Orb Showcase
           Center(
             child: Column(
               children: [
@@ -251,8 +252,9 @@ class _MainControlTab extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   static Widget _buildMetricCard({
     required IconData icon,
