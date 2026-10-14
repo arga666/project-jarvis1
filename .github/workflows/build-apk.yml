@@ -46,18 +46,25 @@ jobs:
           cp -r custom_backup/assistant/* android/app/src/main/kotlin/com/jarvis/assistant/
           cp custom_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           
+          sed -i 's/compileSdk = .*/compileSdk = 34\n    compileSdkVersion = 34/' android/app/build.gradle || true
+          sed -i 's/minSdk = .*/minSdk = 26\n        minSdkVersion = 26/' android/app/build.gradle || true
+          sed -i 's/targetSdk = .*/targetSdk = 34\n        targetSdkVersion = 34/' android/app/build.gradle || true
           sed -i 's/namespace = .*/namespace = "com.jarvis.assistant"/' android/app/build.gradle || true
           sed -i 's/applicationId = .*/applicationId = "com.jarvis.assistant"/' android/app/build.gradle || true
-          sed -i 's/namespace ".*/namespace "com.jarvis.assistant"/' android/app/build.gradle || true
-          sed -i 's/applicationId ".*/applicationId "com.jarvis.assistant"/' android/app/build.gradle || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/' android/app/build.gradle || true
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' android/app/build.gradle || true
           
+          echo "rootProject.ext.compileSdkVersion = 34" >> android/build.gradle
+          echo "rootProject.ext.minSdkVersion = 26" >> android/build.gradle
+          echo "rootProject.ext.targetSdkVersion = 34" >> android/build.gradle
+
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
           echo "org.gradle.jvmargs=-Xmx4G" >> android/gradle.properties
           
           flutter pub get
+
+          # Auto-patch legacy compileSdkVersion substring check in speech_to_text plugin
+          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i 's/.*substring.*//g' {} + || true
+          find /home/runner/.pub-cache -name "build.gradle" -path "*/speech_to_text*/*" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' {} + || true
 
       - name: Build Android Release APK
         run: flutter build apk --release --no-tree-shake-icons
